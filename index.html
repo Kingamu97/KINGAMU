@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kingamu Movies — Stream Movies, TV Shows & Anime</title>
+  <meta name="description" content="Watch thousands of movies, TV shows and anime. Browse latest releases and stream instantly with high quality servers on Kingamu Movies.">
+  <link rel="icon" href="https://image.tmdb.org/t/p/w92/or065RznetuEV34t21Gw5o4Jrm5.jpg" type="image/x-icon">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- Interactive mouse cursor projection glow -->
+  <div id="mouse-glow"></div>
+
+  <!-- Cinematic Loading Screen Overlay with Particles -->
+  <div class="loader-screen" id="global-loader">
+    <div class="loader-bg-glow"></div>
+    <!-- Floating particle backdrop -->
+    <div class="loader-particles"></div>
+    
+    <div class="loader-container">
+      <div class="loader-title-wrapper">
+        <h2 class="loader-title">
+          <span class="letter" style="--i:0">K</span>
+          <span class="letter" style="--i:1">I</span>
+          <span class="letter" style="--i:2">N</span>
+          <span class="letter" style="--i:3">G</span>
+          <span class="letter" style="--i:4">A</span>
+          <span class="letter" style="--i:5">M</span>
+          <span class="letter" style="--i:6">U</span>
+          &nbsp;
+          <span class="accent-text">
+            <span class="letter" style="--i:7">M</span>
+            <span class="letter" style="--i:8">O</span>
+            <span class="letter" style="--i:9">V</span>
+            <span class="letter" style="--i:10">I</span>
+            <span class="letter" style="--i:11">E</span>
+            <span class="letter" style="--i:12">S</span>
+          </span>
+        </h2>
+        <div class="loader-line"></div>
+      </div>
+      <div class="loader-status">
+        <div class="loader-dots">
+          <div class="loader-dot"></div>
+          <div class="loader-dot"></div>
+          <div class="loader-dot"></div>
+        </div>
+        <p class="loader-text">&lt; if you don't like anime go to hell &gt;</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky Navbar Header -->
+  <header class="header">
+    <div class="header-left">
+      <a href="#/" class="logo">KINGAMU <span>MOVIES</span></a>
+      <nav class="nav-links" id="main-nav-links">
+        <a href="#/" class="nav-link active" data-route="">Home</a>
+        <a href="#/movies" class="nav-link" data-route="movies">Movies</a>
+        <a href="#/tv" class="nav-link" data-route="tv">TV Shows</a>
+        <a href="#/anime" class="nav-link" data-route="anime">Anime</a>
+      </nav>
+    </div>
+    
+    <div class="header-right">
+      <!-- Search Input box wrapper -->
+      <div class="search-wrapper">
+        <input type="text" placeholder="Search movies, TV shows..." class="search-input-box" id="search-input" autocomplete="off">
+        <svg class="search-icon-inside" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <!-- Dynamic suggestions, recent searches & trending queries box -->
+        <div class="search-suggestions-dropdown" id="search-suggestions-box"></div>
+      </div>
+
+      <!-- Settings trigger gear button -->
+      <button class="icon-btn" id="settings-trigger" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+
+      <!-- Dynamic User Profile / Auth trigger avatar icon -->
+      <a href="#/auth" class="icon-btn" id="profile-trigger" title="Sign In" style="overflow: hidden; display: flex;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="user-avatar-placeholder" style="width: 18px; height: 18px;">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <img id="header-avatar-img" src="" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+      </a>
+    </div>
+  </header>
+
+  <!-- Dynamic Search Overlay -->
+  <div class="search-results-overlay" id="search-results-overlay">
+    <div class="container search-results-container">
+      <div class="search-results-header">
+        <h3 class="search-results-title">Search Results for <span id="search-query-text">""</span></h3>
+        
+        <!-- Search Filters Bar -->
+        <div class="filter-bar" id="search-filter-bar">
+          <div class="filter-group">
+            <label class="filter-label">Genre</label>
+            <div class="custom-select-wrapper">
+              <select id="filter-genre" class="custom-select filter-select">
+                <option value="">All Genres</option>
+                <option value="28">Action</option>
+                <option value="12">Adventure</option>
+                <option value="16">Animation</option>
+                <option value="35">Comedy</option>
+                <option value="80">Crime</option>
+                <option value="99">Documentary</option>
+                <option value="18">Drama</option>
+                <option value="10751">Family</option>
+                <option value="14">Fantasy</option>
+                <option value="36">History</option>
+                <option value="27">Horror</option>
+                <option value="10402">Music</option>
+                <option value="9648">Mystery</option>
+                <option value="10749">Romance</option>
+                <option value="878">Sci-Fi</option>
+                <option value="53">Thriller</option>
+                <option value="10752">War</option>
+                <option value="37">Western</option>
+              </select>
+              <div class="custom-select-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 9l-7 7-7-7"/></svg>
+              </div>
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">Year</label>
+            <div class="custom-select-wrapper">
+              <select id="filter-year" class="custom-select filter-select">
+                <option value="">All Years</option>
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
+                <option value="2020">2020</option>
+                <option value="2020s">2020s</option>
+                <option value="2010s">2010s</option>
+                <option value="2000s">2000s</option>
+                <option value="1990s">1990s</option>
+              </select>
+              <div class="custom-select-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 9l-7 7-7-7"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Rating</label>
+            <div class="custom-select-wrapper">
+              <select id="filter-rating" class="custom-select filter-select">
+                <option value="">All Ratings</option>
+                <option value="8">8.0+ Stars</option>
+                <option value="7">7.0+ Stars</option>
+                <option value="6">6.0+ Stars</option>
+                <option value="5">5.0+ Stars</option>
+              </select>
+              <div class="custom-select-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 9l-7 7-7-7"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Language</label>
+            <div class="custom-select-wrapper">
+              <select id="filter-language" class="custom-select filter-select">
+                <option value="">All Languages</option>
+                <option value="en">English</option>
+                <option value="ja">Japanese</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="ko">Korean</option>
+                <option value="it">Italian</option>
+                <option value="de">German</option>
+              </select>
+              <div class="custom-select-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 9l-7 7-7-7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="movie-grid" id="search-grid"></div>
+    </div>
+  </div>
+
+  <!-- Settings Configuration Modal -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">Preferences & Settings</h3>
+        <button class="modal-close" id="close-settings-x">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Custom Styling Preferences -->
+        <div class="form-group">
+          <label class="form-label">Accent Color Theme</label>
+          <div class="color-picker">
+            <div class="color-option active" data-color="#e50914" data-name="red" style="background-color: #e50914;"></div>
+            <div class="color-option" data-color="#8B5CF6" data-name="purple" style="background-color: #8B5CF6;"></div>
+            <div class="color-option" data-color="#3B82F6" data-name="blue" style="background-color: #3B82F6;"></div>
+            <div class="color-option" data-color="#10B981" data-name="green" style="background-color: #10B981;"></div>
+            <div class="color-option" data-color="#F59E0B" data-name="amber" style="background-color: #F59E0B;"></div>
+          </div>
+        </div>
+
+        <!-- VIDEASY Customizer options -->
+        <div class="form-group">
+          <label class="form-label" style="margin-bottom: 0.75rem;">Player Experience</label>
+          
+          <div class="switch-row" style="margin-bottom: 0.75rem;">
+            <span style="font-size: 0.8rem; font-weight: 500;">Autoplay Next Episode</span>
+            <label class="switch-control">
+              <input type="checkbox" id="set-autoplay" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="switch-row" style="margin-bottom: 0.75rem;">
+            <span style="font-size: 0.8rem; font-weight: 500;">Netflix-style Pause Overlay</span>
+            <label class="switch-control">
+              <input type="checkbox" id="set-overlay" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="switch-row" style="margin-bottom: 0.75rem;">
+            <span style="font-size: 0.8rem; font-weight: 500;">Next Episode Button</span>
+            <label class="switch-control">
+              <input type="checkbox" id="set-nextbtn" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="switch-row">
+            <span style="font-size: 0.8rem; font-weight: 500;">Show Season/Episode Selector</span>
+            <label class="switch-control">
+              <input type="checkbox" id="set-selector" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-settings-cancel" style="padding: 0.6rem 1.5rem; border-radius: 8px;">Cancel</button>
+        <button class="btn btn-primary" id="btn-settings-save" style="padding: 0.6rem 1.5rem; border-radius: 8px;">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPA Router Target Container -->
+  <main class="main-content" id="app">
+    <!-- Router template pages will be dynamically injected here -->
+  </main>
+
+  <!-- Sticky Footer layout -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-logo">KINGAMU <span>MOVIES</span></div>
+      <div class="footer-links">
+        <a href="#/" class="footer-link">Home</a>
+        <a href="#/movies" class="footer-link">Movies</a>
+        <a href="#/tv" class="footer-link">TV Shows</a>
+        <a href="#/anime" class="footer-link">Anime</a>
+        <a href="https://themoviedb.org" target="_blank" class="footer-link">TMDB</a>
+      </div>
+      <p class="footer-text">
+        Kingamu Movies is a client-side indexing engine linking to public media hosting services. We do not store, host, or upload any files on our servers. All movie information and assets are provided by community APIs (TheMovieDB & AniList).
+      </p>
+      <p class="footer-credits">
+        &copy; 2026 Kingamu Movies. Made with love for cinematic experiences.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Sticky Bottom Navigation Bar for Mobile Screens -->
+  <nav class="bottom-nav" id="mobile-bottom-nav">
+    <a href="#/" class="bottom-nav-item active" data-route="">
+      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      <span class="bottom-nav-label">Home</span>
+    </a>
+    <a href="#/movies" class="bottom-nav-item" data-route="movies">
+      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+      <span class="bottom-nav-label">Movies</span>
+    </a>
+    <a href="#/tv" class="bottom-nav-item" data-route="tv">
+      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
+      <span class="bottom-nav-label">TV</span>
+    </a>
+    <a href="#/anime" class="bottom-nav-item" data-route="anime">
+      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+      <span class="bottom-nav-label">Anime</span>
+    </a>
+    <a href="#/profile" class="bottom-nav-item" data-route="profile" id="bottom-nav-profile-link">
+      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <span class="bottom-nav-label">Profile</span>
+    </a>
+  </nav>
+
+</body>
+</html>
