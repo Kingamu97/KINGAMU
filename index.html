@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kingamu Movies — Stream Movies, TV Shows & Anime</title>
   <meta name="description" content="Watch thousands of movies, TV shows and anime. Browse latest releases and stream instantly with high quality servers on Kingamu Movies.">
-  <link rel="icon" href="https://image.tmdb.org/t/p/w92/or065RznetuEV34t21Gw5o4Jrm5.jpg" type="image/x-icon">
+  <link rel="icon" href="favicon.png" type="image/png">
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
 </head>
@@ -14,39 +14,23 @@
   <!-- Interactive mouse cursor projection glow -->
   <div id="mouse-glow"></div>
 
-  <!-- Cinematic Loading Screen Overlay with Particles -->
+  <!-- Cinematic Loading Screen Overlay with Portal Ring -->
   <div class="loader-screen" id="global-loader">
     <div class="loader-bg-glow"></div>
     <!-- Floating particle backdrop -->
     <div class="loader-particles"></div>
     
     <div class="loader-container">
-      <div class="loader-title-wrapper">
-        <h2 class="loader-title">
-          <span class="letter" style="--i:0">K</span>
-          <span class="letter" style="--i:1">I</span>
-          <span class="letter" style="--i:2">N</span>
-          <span class="letter" style="--i:3">G</span>
-          <span class="letter" style="--i:4">A</span>
-          <span class="letter" style="--i:5">M</span>
-          <span class="letter" style="--i:6">U</span>
-          &nbsp;
-          <span class="accent-text">
-            <span class="letter" style="--i:7">M</span>
-            <span class="letter" style="--i:8">O</span>
-            <span class="letter" style="--i:9">V</span>
-            <span class="letter" style="--i:10">I</span>
-            <span class="letter" style="--i:11">E</span>
-            <span class="letter" style="--i:12">S</span>
-          </span>
+      <div class="loader-portal">
+        <div class="portal-ring portal-ring-outer"></div>
+        <div class="portal-ring portal-ring-inner"></div>
+        <h2 class="loader-title-new">
+          KINGAMU <span>MOVIES</span>
         </h2>
-        <div class="loader-line"></div>
       </div>
       <div class="loader-status">
-        <div class="loader-dots">
-          <div class="loader-dot"></div>
-          <div class="loader-dot"></div>
-          <div class="loader-dot"></div>
+        <div class="loader-progress-bar">
+          <div class="loader-progress-fill"></div>
         </div>
         <p class="loader-text">&lt; if you don't like anime go to hell &gt;</p>
       </div>
@@ -57,6 +41,9 @@
   <header class="header">
     <div class="header-left">
       <a href="#/" class="logo">KINGAMU <span>MOVIES</span></a>
+    </div>
+    
+    <div class="header-center">
       <nav class="nav-links" id="main-nav-links">
         <a href="#/" class="nav-link active" data-route="">Home</a>
         <a href="#/movies" class="nav-link" data-route="movies">Movies</a>
@@ -211,11 +198,10 @@
         <div class="form-group">
           <label class="form-label">Accent Color Theme</label>
           <div class="color-picker">
-            <div class="color-option active" data-color="#e50914" data-name="red" style="background-color: #e50914;"></div>
+            <div class="color-option active" data-color="#F59E0B" data-name="amber" style="background-color: #F59E0B;"></div>
             <div class="color-option" data-color="#8B5CF6" data-name="purple" style="background-color: #8B5CF6;"></div>
             <div class="color-option" data-color="#3B82F6" data-name="blue" style="background-color: #3B82F6;"></div>
             <div class="color-option" data-color="#10B981" data-name="green" style="background-color: #10B981;"></div>
-            <div class="color-option" data-color="#F59E0B" data-name="amber" style="background-color: #F59E0B;"></div>
           </div>
         </div>
 

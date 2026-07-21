@@ -8,20 +8,20 @@ window.mediaCache = {};
 
 // User Avatar icons selection list
 const USER_AVATARS = [
-  { id: "av1", name: "Superhero", url: "https://image.tmdb.org/t/p/w92/or065RznetuEV34t21Gw5o4Jrm5.jpg" },
-  { id: "av2", name: "Sci-Fi Geek", url: "https://image.tmdb.org/t/p/w92/49WJfeN0mhmmRLxsO7SLbb62h0G.jpg" },
-  { id: "av3", name: "Showrunner", url: "https://image.tmdb.org/t/p/w92/2y446sc9xRxd6672AsOIW9FHO0f.jpg" },
-  { id: "av4", name: "Director", url: "https://image.tmdb.org/t/p/w92/hjS9mH8KvRiGHgjk6VUZH7OT0Ng.jpg" },
-  { id: "av5", name: "Cinephile", url: "https://image.tmdb.org/t/p/w92/8912AsVuS7Sj915apArUFbv6F9L.jpg" },
-  { id: "av6", name: "Popcorn Lover", url: "https://image.tmdb.org/t/p/w92/ztkUQv63Mz4836oiGo2j6voo8rv.jpg" }
+  { id: "av1", name: "Batman", url: "https://img.icons8.com/color/96/batman.png" },
+  { id: "av2", name: "Iron Man", url: "https://img.icons8.com/color/96/iron-man.png" },
+  { id: "av3", name: "Captain America", url: "https://img.icons8.com/color/96/captain-america.png" },
+  { id: "av4", name: "Spider-Man", url: "https://img.icons8.com/color/96/spider-man.png" },
+  { id: "av5", name: "Deadpool", url: "https://img.icons8.com/color/96/deadpool.png" },
+  { id: "av6", name: "Wonder Woman", url: "https://img.icons8.com/color/96/wonder-woman.png" }
 ];
 
 // App settings state
 let settings = {
   tmdbKey: DEFAULT_TMDB_KEY,
   tmdbToken: DEFAULT_TMDB_TOKEN,
-  accentColor: localStorage.getItem("kingamu_accent_color") || "#e50914",
-  accentColorName: localStorage.getItem("kingamu_accent_color_name") || "red",
+  accentColor: localStorage.getItem("kingamu_accent_color") || "#ff9f0a",
+  accentColorName: localStorage.getItem("kingamu_accent_color_name") || "amber",
   playerOverlay: localStorage.getItem("kingamu_player_overlay") !== "false",
   playerNextBtn: localStorage.getItem("kingamu_player_next_btn") !== "false",
   playerAutoplay: localStorage.getItem("kingamu_player_autoplay") !== "false",
