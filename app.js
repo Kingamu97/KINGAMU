@@ -589,11 +589,13 @@ function getWatchProgress(type, id, season = null, episode = null) {
   let progressList = JSON.parse(localStorage.getItem("kingamu_progress")) || [];
   let item = progressList.find(i => i.id == id && i.type == type);
   if (item) {
-    if (type === "tv" && (item.season != season || item.episode != episode)) {
-      return null;
-    }
-    if (type === "anime" && item.episode != episode) {
-      return null;
+    if (season !== null || episode !== null) {
+      if (type === "tv" && season !== null && episode !== null && (item.season != season || item.episode != episode)) {
+        return null;
+      }
+      if (type === "anime" && episode !== null && item.episode != episode) {
+        return null;
+      }
     }
     return item;
   }
@@ -634,9 +636,7 @@ function createMovieCard(item, type, isTop10Rank = null) {
   const date = item.release_date || item.first_air_date || "2026-01-01";
   const year = date.split("-")[0];
   
-  let watchRoute = `#/watch/movie/${id}`;
-  if (type === "tv") watchRoute = `#/watch/tv/${id}/1/1`;
-  if (type === "anime") watchRoute = `#/watch/anime/${id}/1`;
+  let detailsRoute = `#/details/${type}/${id}`;
 
   const watchmarked = window.isInWatchlist(id, type);
   const favorited = window.isFavorite(id, type);
@@ -669,12 +669,12 @@ function createMovieCard(item, type, isTop10Rank = null) {
 
         <img class="card-poster" src="${posterPath}" alt="${title}" loading="lazy" />
         <div class="card-play-overlay">
-          <a class="card-play-btn" href="${watchRoute}">
+          <a class="card-play-btn" href="${detailsRoute}">
             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
           </a>
         </div>
       </div>
-      <a class="card-details-drawer" href="${watchRoute}">
+      <a class="card-details-drawer" href="${detailsRoute}">
         <h4 class="card-details-title">${title}</h4>
         <div class="card-details-meta">
           <span>${year}</span>
@@ -791,10 +791,8 @@ window.openQuickPreview = async function(event, type, id) {
   document.getElementById("preview-title").innerText = details.title || details.name;
   document.getElementById("preview-desc").innerText = details.overview;
   
-  let watchRoute = `#/watch/movie/${id}`;
-  if (type === "tv") watchRoute = `#/watch/tv/${id}/1/1`;
-  if (type === "anime") watchRoute = `#/watch/anime/${id}/1`;
-  document.getElementById("preview-play-link").href = watchRoute;
+  let detailsRoute = `#/details/${type}/${id}`;
+  document.getElementById("preview-play-link").href = detailsRoute;
   
   const wlBtn = document.getElementById("preview-watchlist-btn");
   const watchmarked = window.isInWatchlist(id, type);
@@ -1127,7 +1125,9 @@ async function renderHomePage() {
 // -------------------------------------------------------------
 // Movie details Page watch view (Redesigned)
 // -------------------------------------------------------------
-async function renderWatchPage(type, id, season = 1, episode = 1) {
+// Media Details Page View Render (`#/details/:type/:id`)
+// -------------------------------------------------------------
+async function renderDetailsPage(type, id) {
   const app = document.getElementById("app");
   
   app.innerHTML = `
@@ -1156,10 +1156,14 @@ async function renderWatchPage(type, id, season = 1, episode = 1) {
         <p class="hero-overview" id="details-desc" style="max-width: 700px; font-size:1rem; margin-bottom: 2.5rem;">Overview loading...</p>
         
         <div class="hero-btns">
-          <button class="btn btn-primary" id="details-play-trigger">
+          <a class="btn btn-primary" id="details-play-trigger" href="#/">
             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-            Play Now
-          </button>
+            Watch Now
+          </a>
+          <a class="btn btn-secondary" id="details-episodes-trigger" href="#/" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+            Episodes Guide
+          </a>
           <button class="btn btn-secondary" id="details-watchlist-btn">
             <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
             <span class="bookmark-text">Add to Watchlist</span>
@@ -1172,79 +1176,7 @@ async function renderWatchPage(type, id, season = 1, episode = 1) {
       </div>
     </div>
 
-    <!-- On-Demand Expandable Player container -->
-    <div class="details-player-wrapper" id="player-reveal-wrapper">
-      <!-- Live streaming active status bar -->
-      <div class="watch-details-bar" style="border-radius:0;">
-        <div class="watch-bar-left">
-          <span class="watching-title" style="font-weight:700;">Streaming: <span id="bar-title-text">...</span></span>
-          <div class="bar-divider"></div>
-          <a href="" target="_blank" rel="noopener noreferrer" class="pill-link" id="bar-download-link" style="display:none;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            Download
-          </a>
-        </div>
-        <div class="watch-bar-right">
-          <div class="streaming-pill">
-            <div class="equalizer">
-              <span class="eq-bar bar-1"></span>
-              <span class="eq-bar bar-2"></span>
-              <span class="eq-bar bar-3"></span>
-            </div>
-            <span>Streaming Live</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="player-wrapper" style="border-radius:0; border-left:0; border-right:0;">
-        <div class="player-ambient-glow"></div>
-        <div class="player-container" style="border-radius: 0;">
-          <div class="player-loader" id="watch-player-loader"><div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div></div>
-          <iframe id="streaming-player" class="player-iframe" src="" allowfullscreen allow="encrypted-media" title="Streaming Player"></iframe>
-        </div>
-      </div>
-    </div>
-
     <div class="container watch-info-section">
-      <!-- Switch Server Panel -->
-      <div class="server-section" id="server-panel-container" style="display: none; margin-top:2rem;">
-        <div class="server-label-container">
-          <span class="server-title">Switch Streaming Server</span>
-          <p class="server-desc">Try alternative servers if the player experiences buffering or fails to load.</p>
-        </div>
-        <div class="server-btns">
-          <button class="server-btn active" data-server="s1">S1 (Videasy)</button>
-          <button class="server-btn" data-server="s2">S2 (VidSrc.to)</button>
-          <button class="server-btn" data-server="s3">S3 (VidSrc.xyz)</button>
-          <button class="server-btn" data-server="s4">S4 (Superembed)</button>
-          <button class="server-btn" data-server="s5">S5 (VidSrc VIP)</button>
-        </div>
-      </div>
-
-      <!-- TV Season & Episode Panel Selector -->
-      <div class="episodes-panel" id="tv-selector-panel" style="display: none; margin-top: 2.5rem;">
-        <div class="episodes-panel-header">
-          <h4 class="episodes-panel-title">Seasons & Episodes Guide</h4>
-          <div class="selectors-row">
-            <div class="custom-select-wrapper">
-              <select class="custom-select" id="season-selector"></select>
-              <div class="custom-select-arrow">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 9l-7 7-7-7"/></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="episodes-grid" id="episodes-btn-grid"></div>
-      </div>
-
-      <!-- Anime Episode selector panel -->
-      <div class="episodes-panel" id="anime-selector-panel" style="display: none; margin-top: 2.5rem;">
-        <div class="episodes-panel-header">
-          <h4 class="episodes-panel-title">Episode Select</h4>
-        </div>
-        <div class="episodes-grid" id="anime-episodes-grid"></div>
-      </div>
-
       <!-- Cast and Crew details Section -->
       <section class="cast-section" id="movie-cast-section" style="display:none;">
         <h3 class="shelf-title">Cast Members</h3>
@@ -1288,7 +1220,6 @@ async function renderWatchPage(type, id, season = 1, episode = 1) {
   document.getElementById("details-rating-val").innerText = details.vote_average ? parseFloat(details.vote_average).toFixed(1) : "7.5";
   document.getElementById("details-year").innerText = (details.release_date || details.first_air_date || "2026-01-01").split("-")[0];
   document.getElementById("details-desc").innerText = details.overview;
-  document.getElementById("bar-title-text").innerText = titleText;
 
   // Runtime tag
   const runtimeMin = details.runtime || details.episode_run_time ? (details.runtime || details.episode_run_time[0]) : null;
@@ -1303,7 +1234,35 @@ async function renderWatchPage(type, id, season = 1, episode = 1) {
   const bgPath = details.backdrop_path || details.poster_path;
   bannerImg.src = bgPath ? (bgPath.startsWith("http") ? bgPath : `https://image.tmdb.org/t/p/w1280${bgPath}`) : "";
 
-  // Dynamic buttons actions
+  // Watch Now Button configuration
+  const playTrigger = document.getElementById("details-play-trigger");
+  if (type === "movie") {
+    playTrigger.href = `#/watch/movie/${id}`;
+  } else if (type === "tv") {
+    // Check local progress for TV show
+    const saved = getWatchProgress("tv", id);
+    if (saved && saved.season && saved.episode) {
+      playTrigger.href = `#/watch/tv/${id}/${saved.season}/${saved.episode}`;
+    } else {
+      playTrigger.href = `#/watch/tv/${id}/1/1`;
+    }
+  } else if (type === "anime") {
+    const saved = getWatchProgress("anime", id);
+    if (saved && saved.episode) {
+      playTrigger.href = `#/watch/anime/${id}/${saved.episode}`;
+    } else {
+      playTrigger.href = `#/watch/anime/${id}/1`;
+    }
+  }
+
+  // Episodes button for TV and Anime
+  if (type === "tv" || type === "anime") {
+    const epsTrigger = document.getElementById("details-episodes-trigger");
+    epsTrigger.style.display = "inline-flex";
+    epsTrigger.href = `#/episodes/${type}/${id}`;
+  }
+
+  // Bookmark / Favorite UI state
   const watchmarked = window.isInWatchlist(id, type);
   const favorited = window.isFavorite(id, type);
   updateBookmarkUIStates(id, type, watchmarked);
@@ -1311,138 +1270,6 @@ async function renderWatchPage(type, id, season = 1, episode = 1) {
 
   document.getElementById("details-watchlist-btn").onclick = (e) => window.toggleWatchlist(e, type, id);
   document.getElementById("details-favorite-btn").onclick = (e) => window.toggleFavorite(e, type, id);
-
-  // Setup Server player iframe loader source trigger
-  function updatePlayerSource(serverName) {
-    const iframe = document.getElementById("streaming-player");
-    const loader = document.getElementById("watch-player-loader");
-    loader.style.display = "flex"; 
-    
-    const saved = getWatchProgress(type, id, season, episode);
-    const startSec = (saved && saved.timestamp) ? Math.floor(saved.timestamp) : 0;
-    
-    let url = "";
-    const colorHex = settings.accentColor.replace("#", "");
-
-    if (serverName === "s1") {
-      if (type === "movie") {
-        url = `https://player.videasy.net/movie/${id}?color=${colorHex}&overlay=${settings.playerOverlay}&progress=${startSec}`;
-      } else if (type === "tv") {
-        url = `https://player.videasy.net/tv/${id}/${season}/${episode}?color=${colorHex}&overlay=${settings.playerOverlay}&nextEpisode=${settings.playerNextBtn}&autoplayNextEpisode=${settings.playerAutoplay}&episodeSelector=${settings.playerSelector}&progress=${startSec}`;
-      } else if (type === "anime") {
-        url = `https://player.videasy.net/anime/${id}/${episode}?color=${colorHex}&overlay=${settings.playerOverlay}&nextEpisode=${settings.playerNextBtn}&autoplayNextEpisode=${settings.playerAutoplay}&episodeSelector=${settings.playerSelector}&progress=${startSec}`;
-      }
-    } else {
-      const baseMap = {
-        s2: `https://vidsrc.to/embed/`,
-        s3: `https://vidsrc.xyz/embed/`,
-        s4: `https://multiembed.to/embed.php?tmdb=1&video_id=`,
-        s5: `https://vidsrc.vip/embed/`
-      };
-      
-      const baseUrl = baseMap[serverName];
-      if (serverName === "s4") {
-        url = type === "movie" ? `${baseUrl}${id}` : `${baseUrl}${id}&s=${season}&e=${episode}`;
-      } else {
-        url = type === "movie" ? `${baseUrl}movie/${id}` : `${baseUrl}tv/${id}/${season}/${episode}`;
-      }
-      if (startSec > 0 && serverName !== "s4") url += `?t=${startSec}`;
-    }
-
-    iframe.src = url;
-    iframe.onload = () => { loader.style.display = "none"; };
-    
-    // Log watchlist watch history progress
-    logWatchHistory({
-      id: id,
-      type: type,
-      title: titleText,
-      poster: details.poster_path,
-      season: type === "movie" ? null : season,
-      episode: type === "movie" ? null : episode
-    });
-  }
-
-  // Play Now trigger expands player wrapper in-place
-  const playTrigger = document.getElementById("details-play-trigger");
-  playTrigger.onclick = () => {
-    const wrapper = document.getElementById("player-reveal-wrapper");
-    const serverPanel = document.getElementById("server-panel-container");
-    
-    wrapper.classList.add("expanded");
-    serverPanel.style.display = "block";
-    
-    updatePlayerSource(currentWatchServer);
-    
-    setTimeout(() => {
-      wrapper.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 200);
-  };
-
-  if (type === "movie") {
-    const dlLink = document.getElementById("bar-download-link");
-    dlLink.href = `https://dl.vidsrc.vip/movie/${id}`;
-    dlLink.style.display = "inline-flex";
-  }
-
-  const serverButtons = document.querySelectorAll(".server-btn");
-  serverButtons.forEach(btn => {
-    if (btn.dataset.server === currentWatchServer) {
-      serverButtons.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-    }
-    btn.addEventListener("click", () => {
-      serverButtons.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      currentWatchServer = btn.dataset.server;
-      updatePlayerSource(currentWatchServer);
-    });
-  });
-
-  // TV Selector Guide
-  if (type === "tv") {
-    const tvSelectorPanel = document.getElementById("tv-selector-panel");
-    const seasonSelect = document.getElementById("season-selector");
-    const episodesGrid = document.getElementById("episodes-btn-grid");
-
-    tvSelectorPanel.style.display = "block";
-    const totalSeasons = details.number_of_seasons || (details.seasons ? details.seasons.length : 1);
-    let seasonsOptions = "";
-    for (let s = 1; s <= totalSeasons; s++) {
-      seasonsOptions += `<option value="${s}" ${s == season ? 'selected' : ''}>Season ${s}</option>`;
-    }
-    seasonSelect.innerHTML = seasonsOptions;
-
-    async function loadEpisodesForSeason(sNum) {
-      episodesGrid.innerHTML = `<span style="font-size:0.85rem; color:var(--muted)">Loading Season ${sNum} episodes...</span>`;
-      let episodesList = await getSeasonDetails(id, sNum);
-      if (!episodesList || episodesList.length === 0) {
-        episodesList = Array.from({ length: 12 }, (_, i) => ({ episode_number: i + 1 }));
-      }
-      episodesGrid.innerHTML = episodesList.map(ep => {
-        const epNum = ep.episode_number;
-        const isActive = sNum == season && epNum == episode;
-        return `<a class="episode-btn ${isActive ? 'active' : ''}" href="#/watch/tv/${id}/${sNum}/${epNum}">${epNum}</a>`;
-      }).join("");
-    }
-    loadEpisodesForSeason(season);
-    seasonSelect.addEventListener("change", (e) => loadEpisodesForSeason(e.target.value));
-  }
-
-  // Anime Selector Guide
-  if (type === "anime") {
-    const animeSelectorPanel = document.getElementById("anime-selector-panel");
-    const animeEpisodesGrid = document.getElementById("anime-episodes-grid");
-
-    animeSelectorPanel.style.display = "block";
-    const epsCount = details.episodes_count || 12;
-    let animeEpisodesHtml = "";
-    for (let e = 1; e <= epsCount; e++) {
-      const isActive = e == episode;
-      animeEpisodesHtml += `<a class="episode-btn ${isActive ? 'active' : ''}" href="#/watch/anime/${id}/${e}">${e}</a>`;
-    }
-    animeEpisodesGrid.innerHTML = animeEpisodesHtml;
-  }
 
   // Fetch Trailer & Cast credits concurrently
   if (type !== "anime") {
@@ -1494,24 +1321,600 @@ async function renderWatchPage(type, id, season = 1, episode = 1) {
     }
   }
 
-  // Video Progress details tracking
-  window.currentVideoDetails = {
-    id: id,
-    type: type,
-    season: season,
-    episode: episode,
-    title: titleText,
-    poster: details.poster_path
-  };
-
   // Similar Recommendations Grid
   const recommendations = await getRecommendations(type, id);
   document.getElementById("recommendations-grid").innerHTML = recommendations.slice(0, 6).map(item => createMovieCard(item, type)).join("");
 }
 
 // -------------------------------------------------------------
-// Advanced Filter & Search suggestions
 // -------------------------------------------------------------
+// TV Episodes Guide Page View Render (`#/episodes/:type/:id`)
+// -------------------------------------------------------------
+async function renderEpisodesPage(type, id) {
+  const app = document.getElementById("app");
+  
+  app.innerHTML = `
+    <div class="episodes-page-hero">
+      <div class="episodes-page-backdrop">
+        <img id="episodes-hero-img" src="" alt="Backdrop">
+      </div>
+      <div class="episodes-page-overlay"></div>
+      <div class="container episodes-page-hero-content">
+        <a class="back-btn" id="episodes-back-btn" href="#/details/${type}/${id}" style="margin-bottom: 1.5rem; display: inline-flex;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to Details
+        </a>
+        <h1 class="hero-title" id="episodes-show-title" style="font-size: 3rem; margin-bottom: 0;">Loading Show...</h1>
+      </div>
+    </div>
+
+    <div class="container" style="padding-top: 2.5rem; padding-bottom: 4rem;">
+      <div class="episodes-header-row">
+        <div>
+          <h3 class="shelf-title" style="margin-bottom: 0.25rem;">Episodes Guide</h3>
+          <p class="shelf-subtitle" style="margin-bottom: 0;">Browse and watch full episodes of this series.</p>
+        </div>
+        
+        <!-- Season Selector Wrapper (Only shown for TV Shows) -->
+        <div id="episodes-season-selector-wrapper" style="display: none;">
+          <div class="custom-select-wrapper" style="min-width: 180px;">
+            <select class="custom-select" id="episodes-season-dropdown"></select>
+            <div class="custom-select-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Episode cards vertical container -->
+      <div class="episode-cards-list" id="episodes-cards-container">
+        <span style="color: var(--muted); font-size: 0.9rem;">Loading episodes list...</span>
+      </div>
+    </div>
+  `;
+
+  // Fetch details
+  const details = await getMediaDetails(type, id);
+  if (!details) {
+    app.innerHTML = `<div class="container" style="padding: 10rem 0; text-align:center;"><h2>Content not found or API error</h2><br/><a href="#/" class="btn btn-primary">Back to Home</a></div>`;
+    return;
+  }
+
+  const showTitle = details.title || details.name;
+  document.getElementById("episodes-show-title").innerText = `${showTitle} — Episodes`;
+  
+  const backdropUrl = details.backdrop_path || details.poster_path;
+  document.getElementById("episodes-hero-img").src = backdropUrl ? 
+    (backdropUrl.startsWith("http") ? backdropUrl : `https://image.tmdb.org/t/p/w1280${backdropUrl}`) : 
+    "";
+
+  const container = document.getElementById("episodes-cards-container");
+
+  // TV series logic
+  if (type === "tv") {
+    const selectorWrapper = document.getElementById("episodes-season-selector-wrapper");
+    const dropdown = document.getElementById("episodes-season-dropdown");
+    
+    selectorWrapper.style.display = "block";
+    const totalSeasons = details.number_of_seasons || (details.seasons ? details.seasons.length : 1);
+    
+    let dropdownHtml = "";
+    for (let s = 1; s <= totalSeasons; s++) {
+      dropdownHtml += `<option value="${s}">Season ${s}</option>`;
+    }
+    dropdown.innerHTML = dropdownHtml;
+
+    async function loadSeasonEpisodes(sNum) {
+      container.innerHTML = `<span style="color: var(--muted); font-size:0.9rem;">Loading Season ${sNum} episodes...</span>`;
+      let episodesList = await getSeasonDetails(id, sNum);
+      if (!episodesList || episodesList.length === 0) {
+        episodesList = Array.from({ length: 12 }, (_, i) => ({
+          episode_number: i + 1,
+          name: `Episode ${i + 1}`,
+          overview: "No description available for this episode at the moment.",
+          runtime: 45
+        }));
+      }
+
+      container.innerHTML = episodesList.map(ep => {
+        const epNum = ep.episode_number;
+        const epTitle = ep.name || `Episode ${epNum}`;
+        const epDesc = ep.overview || "No description available for this episode.";
+        const epRuntime = ep.runtime ? `${ep.runtime}m` : "45m";
+        const thumbUrl = ep.still_path ? 
+          `https://image.tmdb.org/t/p/w300${ep.still_path}` : 
+          (details.backdrop_path ? `https://image.tmdb.org/t/p/w300${details.backdrop_path}` : "https://placehold.co/300x169/0a0a0e/ffffff?text=Episode");
+
+        const watchRoute = `#/watch/tv/${id}/${sNum}/${epNum}`;
+
+        return `
+          <div class="episode-row-card">
+            <div class="episode-row-thumb-wrapper">
+              <img src="${thumbUrl}" alt="${epTitle}" loading="lazy">
+              <div class="episode-row-play-overlay">
+                <a class="episode-row-play-btn" href="${watchRoute}">
+                  <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </a>
+              </div>
+            </div>
+            
+            <div class="episode-row-content">
+              <div class="episode-row-title-bar">
+                <h4 class="episode-row-num-title">Episode ${epNum}: ${epTitle}</h4>
+                <span class="episode-row-runtime">${epRuntime}</span>
+              </div>
+              <p class="episode-row-desc">${epDesc}</p>
+              <a class="btn btn-secondary episode-row-watch-action" href="${watchRoute}" style="font-size:0.75rem; padding: 0.5rem 1rem;">
+                Watch Episode
+              </a>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    loadSeasonEpisodes(1);
+    dropdown.addEventListener("change", (e) => loadSeasonEpisodes(e.target.value));
+
+  } else if (type === "anime") {
+    // Anime logic
+    const epsCount = details.episodes_count || 12;
+    container.innerHTML = Array.from({ length: epsCount }, (_, i) => {
+      const epNum = i + 1;
+      const epTitle = `Episode ${epNum}`;
+      const epDesc = `Join your favorite characters in this exciting episode ${epNum} of ${showTitle}.`;
+      const epRuntime = details.runtime ? `${details.runtime}m` : "24m";
+      const thumbUrl = details.backdrop_path ? 
+        `https://image.tmdb.org/t/p/w300${details.backdrop_path}` : 
+        "https://placehold.co/300x169/0a0a0e/ffffff?text=Episode";
+
+      const watchRoute = `#/watch/anime/${id}/${epNum}`;
+
+      return `
+        <div class="episode-row-card">
+          <div class="episode-row-thumb-wrapper">
+            <img src="${thumbUrl}" alt="${epTitle}" loading="lazy">
+            <div class="episode-row-play-overlay">
+              <a class="episode-row-play-btn" href="${watchRoute}">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+              </a>
+            </div>
+          </div>
+          
+          <div class="episode-row-content">
+            <div class="episode-row-title-bar">
+              <h4 class="episode-row-num-title">${epTitle}</h4>
+              <span class="episode-row-runtime">${epRuntime}</span>
+            </div>
+            <p class="episode-row-desc">${epDesc}</p>
+            <a class="btn btn-secondary episode-row-watch-action" href="${watchRoute}" style="font-size:0.75rem; padding: 0.5rem 1rem;">
+              Watch Episode
+            </a>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+}
+
+  // -------------------------------------------------------------
+  async function renderWatchPage(type, id, season = 1, episode = 1) {
+    const app = document.getElementById("app");
+    
+    app.innerHTML = `
+      <div class="watch-container" id="watch-container-el">
+        <!-- Header Bar -->
+        <div class="watch-header-bar">
+          <a class="back-btn" href="#/details/${type}/${id}" style="display: inline-flex;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back to Details
+          </a>
+          <div class="watch-header-title" id="watch-title-text">Streaming...</div>
+          <a href="" target="_blank" rel="noopener noreferrer" class="pill-link" id="watch-download-btn" style="display:none; font-size: 0.75rem; font-weight: 800; padding: 0.4rem 1rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:0.9rem; height:0.9rem; margin-right:0.25rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Download
+          </a>
+        </div>
+
+        <!-- Cinema Player Frame -->
+        <div class="watch-player-card" id="watch-player-card-el">
+          <div class="player-ambient-glow"></div>
+          <div class="player-container" style="border-radius: 0; aspect-ratio: 16/9; position: relative;">
+            <div class="player-loader" id="watch-player-loader"><div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div></div>
+            <iframe id="streaming-player" class="player-iframe" src="" allowfullscreen allow="autoplay; encrypted-media" title="Streaming Player" style="border: 0;"></iframe>
+          </div>
+        </div>
+
+        <!-- Controls Row -->
+        <div class="watch-controls-panel">
+          <!-- Left side: Server buttons -->
+          <div class="watch-options-row">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">Server:</span>
+            <div class="server-btns" style="margin: 0; display: inline-flex; gap: 0.5rem;">
+              <button class="server-btn active" data-server="s1">S1 (Videasy)</button>
+              <button class="server-btn" data-server="s2">S2 (VidSrc.to)</button>
+              <button class="server-btn" data-server="s3">S3 (VidSrc.xyz)</button>
+              <button class="server-btn" data-server="s4">S4 (Superembed)</button>
+              <button class="server-btn" data-server="s5">S5 (VidSrc VIP)</button>
+            </div>
+          </div>
+
+          <!-- Right side: Theater mode, Fullscreen, Prev/Next episode buttons -->
+          <div class="watch-options-row">
+            <!-- Prev/Next buttons (Only shown for TV/Anime) -->
+            <div id="watch-episode-nav-wrapper" style="display: none; align-items: center; gap: 0.5rem; margin-right: 0.5rem;">
+              <button class="btn btn-secondary watch-nav-btn" id="watch-prev-ep-btn" style="font-size:0.75rem; padding: 0.5rem 1rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:0.8rem; height:0.8rem;"><path d="M15 19l-7-7 7-7"/></svg>
+                Prev
+              </button>
+              <button class="btn btn-secondary watch-nav-btn" id="watch-next-ep-btn" style="font-size:0.75rem; padding: 0.5rem 1rem;">
+                Next
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:0.8rem; height:0.8rem;"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+
+            <!-- Theater Mode toggle button -->
+            <button class="btn btn-secondary" id="watch-theater-btn" style="font-size: 0.75rem; padding: 0.5rem 1rem; display: inline-flex; align-items: center; gap: 0.4rem;" title="Toggle Wide Screen Theater Mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 0.9rem; height: 0.9rem;"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+              Theater
+            </button>
+
+            <!-- Fullscreen button -->
+            <button class="btn btn-secondary" id="watch-fullscreen-btn" style="font-size: 0.75rem; padding: 0.5rem 1rem; display: inline-flex; align-items: center; gap: 0.4rem;" title="Enter Fullscreen Mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 0.9rem; height: 0.9rem;"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+              Fullscreen
+            </button>
+          </div>
+        </div>
+
+        <!-- TV / Anime In-Player Episode Selector Panel -->
+        <div class="watch-episodes-panel" id="watch-episodes-selector-panel" style="display: none;">
+          <div class="watch-episodes-header">
+            <div class="watch-episodes-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:1.2rem; height:1.2rem; color: var(--accent);"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+              Choose Episode
+            </div>
+            
+            <!-- Season select (TV only) -->
+            <div id="watch-season-select-container" style="display: none;">
+              <div class="custom-select-wrapper" style="min-width: 160px; margin: 0;">
+                <select class="custom-select" id="watch-season-dropdown"></select>
+                <div class="custom-select-arrow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 9l-7 7-7-7"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Grid of compact episode cards -->
+          <div class="watch-episodes-list" id="watch-episodes-grid-list">
+            <span style="color:var(--muted); font-size:0.85rem;">Loading episodes...</span>
+          </div>
+        </div>
+
+        <!-- Audio & Subtitles Info Panel -->
+        <div class="watch-settings-drawer">
+          <div class="watch-settings-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:1.2rem; height:1.2rem;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06-.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Player Audio & Subtitles
+          </div>
+          <div class="watch-settings-grid">
+            <div>
+              <div class="settings-col-label">Audio Tracks</div>
+              <div class="settings-col-options" style="font-size:0.85rem; color:var(--muted)">
+                <span>• English (Original Stereo)</span>
+                <span>• Alternative Dubs (Supported by S1, S4)</span>
+              </div>
+            </div>
+            <div>
+              <div class="settings-col-label">Closed Captions (CC)</div>
+              <div class="settings-col-options" style="font-size:0.85rem; color:var(--muted)">
+                <span>• Click the "CC" button inside the player to enable subtitles.</span>
+                <span>• English, Spanish, French, and Arabic tracks available.</span>
+              </div>
+            </div>
+            <div>
+              <div class="settings-col-label">Streaming Server Tip</div>
+              <div class="settings-col-options" style="font-size:0.85rem; color:var(--muted)">
+                <span>• S1 (Videasy) features native resume-play functionality.</span>
+                <span>• Switch servers if loading experiences high buffering rates.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Fetch details
+    const details = await getMediaDetails(type, id);
+    if (!details) {
+      app.innerHTML = `<div class="container" style="padding: 10rem 0; text-align:center;"><h2>Content not found or API error</h2><br/><a href="#/" class="btn btn-primary">Back to Home</a></div>`;
+      return;
+    }
+
+    const titleText = details.title || details.name;
+    
+    // Set title bar text
+    const titleEl = document.getElementById("watch-title-text");
+    if (type === "movie") {
+      titleEl.innerText = `Streaming: ${titleText}`;
+    } else if (type === "tv") {
+      titleEl.innerText = `Streaming: ${titleText} — S${season} E${episode}`;
+    } else if (type === "anime") {
+      titleEl.innerText = `Streaming: ${titleText} — Episode ${episode}`;
+    }
+
+    // Setup Server player iframe loader source trigger
+    function updatePlayerSource(serverName) {
+      const iframe = document.getElementById("streaming-player");
+      const loader = document.getElementById("watch-player-loader");
+      loader.style.display = "flex"; 
+      
+      const saved = getWatchProgress(type, id, season, episode);
+      const startSec = (saved && saved.timestamp) ? Math.floor(saved.timestamp) : 0;
+      
+      let url = "";
+      const colorHex = settings.accentColor.replace("#", "");
+
+      if (serverName === "s1") {
+        if (type === "movie") {
+          url = `https://player.videasy.net/movie/${id}?color=${colorHex}&overlay=${settings.playerOverlay}&progress=${startSec}`;
+        } else if (type === "tv") {
+          url = `https://player.videasy.net/tv/${id}/${season}/${episode}?color=${colorHex}&overlay=${settings.playerOverlay}&nextEpisode=${settings.playerNextBtn}&autoplayNextEpisode=${settings.playerAutoplay}&episodeSelector=${settings.playerSelector}&progress=${startSec}`;
+        } else if (type === "anime") {
+          url = `https://player.videasy.net/anime/${id}/${episode}?color=${colorHex}&overlay=${settings.playerOverlay}&nextEpisode=${settings.playerNextBtn}&autoplayNextEpisode=${settings.playerAutoplay}&episodeSelector=${settings.playerSelector}&progress=${startSec}`;
+        }
+      } else {
+        const baseMap = {
+          s2: `https://vidsrc.to/embed/`,
+          s3: `https://vidsrc.xyz/embed/`,
+          s4: `https://multiembed.to/embed.php?tmdb=1&video_id=`,
+          s5: `https://vidsrc.vip/embed/`
+        };
+        
+        const baseUrl = baseMap[serverName];
+        if (serverName === "s4") {
+          url = type === "movie" ? `${baseUrl}${id}` : `${baseUrl}${id}&s=${season}&e=${episode}`;
+        } else {
+          url = type === "movie" ? `${baseUrl}movie/${id}` : `${baseUrl}tv/${id}/${season}/${episode}`;
+        }
+        if (startSec > 0 && serverName !== "s4") url += `?t=${startSec}`;
+      }
+
+      iframe.src = url;
+      iframe.onload = () => { loader.style.display = "none"; };
+      
+      // Log watchlist watch history progress
+      logWatchHistory({
+        id: id,
+        type: type,
+        title: titleText,
+        poster: details.poster_path,
+        season: type === "movie" ? null : season,
+        episode: type === "movie" ? null : episode
+      });
+    }
+
+    // Load player immediately
+    updatePlayerSource(currentWatchServer);
+
+    // Download link
+    if (type === "movie") {
+      const dlBtn = document.getElementById("watch-download-btn");
+      dlBtn.href = `https://dl.vidsrc.vip/movie/${id}`;
+      dlBtn.style.display = "inline-flex";
+    }
+
+    // Bind server click buttons
+    const serverButtons = document.querySelectorAll(".server-btn");
+    serverButtons.forEach(btn => {
+      if (btn.dataset.server === currentWatchServer) {
+        serverButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+      btn.addEventListener("click", () => {
+        serverButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentWatchServer = btn.dataset.server;
+        updatePlayerSource(currentWatchServer);
+      });
+    });
+
+    // Bind Theater Mode Button
+    const watchContainer = document.getElementById("watch-container-el");
+    const theaterBtn = document.getElementById("watch-theater-btn");
+    theaterBtn.onclick = () => {
+      watchContainer.classList.toggle("theater");
+      const isTheater = watchContainer.classList.contains("theater");
+      localStorage.setItem("kingamu_theater_mode", isTheater);
+    };
+    if (localStorage.getItem("kingamu_theater_mode") === "true") {
+      watchContainer.classList.add("theater");
+    }
+
+    // Bind Fullscreen Button
+    const fullscreenBtn = document.getElementById("watch-fullscreen-btn");
+    const playerCard = document.getElementById("watch-player-card-el");
+    fullscreenBtn.onclick = () => {
+      if (!document.fullscreenElement) {
+        playerCard.requestFullscreen().catch(err => {
+          console.error("Error entering fullscreen: ", err);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    };
+
+    // TV / Anime Previous & Next buttons logic
+    if (type === "tv" || type === "anime") {
+      const navWrapper = document.getElementById("watch-episode-nav-wrapper");
+      const prevBtn = document.getElementById("watch-prev-ep-btn");
+      const nextBtn = document.getElementById("watch-next-ep-btn");
+      
+      navWrapper.style.display = "inline-flex";
+
+      // Previous Button
+      if (episode > 1) {
+        prevBtn.disabled = false;
+        prevBtn.onclick = () => {
+          if (type === "tv") {
+            window.location.hash = `#/watch/tv/${id}/${season}/${episode - 1}`;
+          } else {
+            window.location.hash = `#/watch/anime/${id}/${episode - 1}`;
+          }
+        };
+      } else {
+        prevBtn.disabled = true;
+      }
+
+      // Next Button
+      if (type === "tv") {
+        getSeasonDetails(id, season).then(episodes => {
+          const totalEps = (episodes && episodes.length) ? episodes.length : 12;
+          if (episode < totalEps) {
+            nextBtn.disabled = false;
+            nextBtn.onclick = () => {
+              window.location.hash = `#/watch/tv/${id}/${season}/${episode + 1}`;
+            };
+          } else {
+            // Check if there is a next season
+            const totalSeasons = details.number_of_seasons || 1;
+            if (season < totalSeasons) {
+              nextBtn.disabled = false;
+              nextBtn.innerText = "Next Season";
+              nextBtn.onclick = () => {
+                window.location.hash = `#/watch/tv/${id}/${season + 1}/1`;
+              };
+            } else {
+              nextBtn.disabled = true;
+            }
+          }
+        });
+      } else if (type === "anime") {
+        const totalEps = details.episodes_count || 12;
+        if (episode < totalEps) {
+          nextBtn.disabled = false;
+          nextBtn.onclick = () => {
+            window.location.hash = `#/watch/anime/${id}/${episode + 1}`;
+          };
+        } else {
+          nextBtn.disabled = true;
+        }
+      }
+    }
+
+    // TV / Anime In-Player Episodes selector guide loading
+    if (type === "tv" || type === "anime") {
+      const epsPanel = document.getElementById("watch-episodes-selector-panel");
+      const epsGrid = document.getElementById("watch-episodes-grid-list");
+      const seasonSelectContainer = document.getElementById("watch-season-select-container");
+      const seasonDropdown = document.getElementById("watch-season-dropdown");
+      
+      epsPanel.style.display = "block";
+      
+      if (type === "tv") {
+        seasonSelectContainer.style.display = "block";
+        const totalSeasons = details.number_of_seasons || (details.seasons ? details.seasons.length : 1);
+        
+        let dropdownHtml = "";
+        for (let s = 1; s <= totalSeasons; s++) {
+          dropdownHtml += `<option value="${s}" ${s == season ? 'selected' : ''}>Season ${s}</option>`;
+        }
+        seasonDropdown.innerHTML = dropdownHtml;
+        
+        async function loadWatchEpisodes(sNum) {
+          epsGrid.innerHTML = `<span style="color:var(--muted); font-size:0.85rem;">Loading Season ${sNum} episodes...</span>`;
+          let episodesList = await getSeasonDetails(id, sNum);
+          if (!episodesList || episodesList.length === 0) {
+            episodesList = Array.from({ length: 12 }, (_, i) => ({
+              episode_number: i + 1,
+              name: `Episode ${i + 1}`,
+              runtime: 45
+            }));
+          }
+          
+          epsGrid.innerHTML = episodesList.map(ep => {
+            const epNum = ep.episode_number;
+            const isActive = (sNum == season && epNum == episode);
+            const epTitle = ep.name || `Episode ${epNum}`;
+            const epRuntime = ep.runtime ? `${ep.runtime}m` : "45m";
+            const thumbUrl = ep.still_path ? 
+              `https://image.tmdb.org/t/p/w185${ep.still_path}` : 
+              (details.backdrop_path ? `https://image.tmdb.org/t/p/w185${details.backdrop_path}` : "https://placehold.co/185x104/0a0a0e/ffffff?text=Episode");
+              
+            const watchRoute = `#/watch/tv/${id}/${sNum}/${epNum}`;
+            
+            return `
+              <a class="watch-episode-card ${isActive ? 'active' : ''}" href="${watchRoute}">
+                <div class="watch-episode-thumb-wrapper">
+                  <img class="watch-episode-thumb" src="${thumbUrl}" alt="${epTitle}" loading="lazy" />
+                  <div class="watch-episode-play-overlay">
+                    <svg class="watch-episode-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                  </div>
+                </div>
+                <div class="watch-episode-info">
+                  <span class="watch-episode-number-title">${epNum}. ${epTitle}</span>
+                  <div class="watch-episode-meta">
+                    <span>${epRuntime}</span>
+                    ${isActive ? '<span style="color:var(--accent); font-weight:700;">Playing</span>' : ''}
+                  </div>
+                </div>
+              </a>
+            `;
+          }).join("");
+        }
+        
+        loadWatchEpisodes(season);
+        seasonDropdown.addEventListener("change", (e) => loadWatchEpisodes(e.target.value));
+        
+      } else if (type === "anime") {
+        const epsCount = details.episodes_count || 12;
+        
+        epsGrid.innerHTML = Array.from({ length: epsCount }, (_, i) => {
+          const epNum = i + 1;
+          const isActive = (epNum == episode);
+          const epTitle = `Episode ${epNum}`;
+          const epRuntime = details.runtime ? `${details.runtime}m` : "24m";
+          const thumbUrl = details.backdrop_path ? 
+            `https://image.tmdb.org/t/p/w185${details.backdrop_path}` : 
+            "https://placehold.co/185x104/0a0a0e/ffffff?text=Episode";
+            
+          const watchRoute = `#/watch/anime/${id}/${epNum}`;
+          
+          return `
+            <a class="watch-episode-card ${isActive ? 'active' : ''}" href="${watchRoute}">
+              <div class="watch-episode-thumb-wrapper">
+                <img class="watch-episode-thumb" src="${thumbUrl}" alt="${epTitle}" loading="lazy" />
+                <div class="watch-episode-play-overlay">
+                  <svg class="watch-episode-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </div>
+              </div>
+              <div class="watch-episode-info">
+                <span class="watch-episode-number-title">${epTitle}</span>
+                <div class="watch-episode-meta">
+                  <span>${epRuntime}</span>
+                  ${isActive ? '<span style="color:var(--accent); font-weight:700;">Playing</span>' : ''}
+                </div>
+              </div>
+            </a>
+          `;
+        }).join("");
+      }
+    }
+
+    // Video Progress details tracking
+    window.currentVideoDetails = {
+      id: id,
+      type: type,
+      season: season,
+      episode: episode,
+      title: titleText,
+      poster: details.poster_path
+    };
+  }
+
+// -------------------------------------------------------------
+// Advanced Filter & Search suggestions
 async function handleSearchInput(query) {
   const overlay = document.getElementById("search-results-overlay");
   const querySpan = document.getElementById("search-query-text");
@@ -1668,11 +2071,10 @@ async function renderSearchSuggestionsDropdown() {
       const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : "https://placehold.co/92x138/0a0a0e/ffffff?text=No+Poster";
       const typeLabel = item.media_type === "tv" ? "TV Show" : "Movie";
 
-      let watchRoute = `#/watch/movie/${item.id}`;
-      if (item.media_type === "tv") watchRoute = `#/watch/tv/${item.id}/1/1`;
+      let detailsRoute = `#/details/${item.media_type}/${item.id}`;
       
       html += `
-        <a class="suggestion-movie-item" href="${watchRoute}">
+        <a class="suggestion-movie-item" href="${detailsRoute}">
           <img class="suggestion-movie-poster" src="${posterPath}" alt="Poster">
           <div class="suggestion-movie-info">
             <span class="suggestion-movie-title">${title}</span>
@@ -2054,6 +2456,14 @@ async function router() {
       renderAuthPage();
     } else if (parts[1] === "profile") {
       renderProfilePage();
+    } else if (parts[1] === "details") {
+      const type = parts[2];
+      const id = parts[3];
+      await renderDetailsPage(type, id);
+    } else if (parts[1] === "episodes") {
+      const type = parts[2];
+      const id = parts[3];
+      await renderEpisodesPage(type, id);
     } else if (parts[1] === "watch") {
       const type = parts[2]; 
       const id = parts[3];
