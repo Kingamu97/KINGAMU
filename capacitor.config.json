@@ -1,0 +1,10 @@
+{
+  "appId": "com.kingamumovies.app",
+  "appName": "Kingamu Movies",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://kingamu.vercel.app/",
+    "cleartext": true
+  }
+}

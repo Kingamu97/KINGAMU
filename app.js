@@ -1497,6 +1497,28 @@ async function renderEpisodesPage(type, id) {
   }
 }
 
+// -------------------------------------------------------------
+// Helper to retrieve IMDB ID for Movies / TV Shows from TMDB
+// -------------------------------------------------------------
+async function getMediaImdbId(type, id, details) {
+  if (type === "movie") {
+    return details.imdb_id || null;
+  }
+  if (type === "tv") {
+    if (details.imdb_id) return details.imdb_id;
+    try {
+      const ext = await tmdbFetch(`/tv/${id}/external_ids`);
+      if (ext && ext.imdb_id) {
+        details.imdb_id = ext.imdb_id; // Cache inside details object
+        return ext.imdb_id;
+      }
+    } catch (err) {
+      console.error("Error retrieving TV external IDs: ", err);
+    }
+  }
+  return null;
+}
+
   // -------------------------------------------------------------
   async function renderWatchPage(type, id, season = 1, episode = 1) {
     const app = document.getElementById("app");
@@ -1527,16 +1549,11 @@ async function renderEpisodesPage(type, id) {
 
         <!-- Controls Row -->
         <div class="watch-controls-panel">
-          <!-- Left side: Server buttons -->
           <div class="watch-options-row">
-            <span style="font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">Server:</span>
-            <div class="server-btns" style="margin: 0; display: inline-flex; gap: 0.5rem;">
-              <button class="server-btn active" data-server="s1">S1 (Videasy)</button>
-              <button class="server-btn" data-server="s2">S2 (VidSrc.to)</button>
-              <button class="server-btn" data-server="s3">S3 (VidSrc.xyz)</button>
-              <button class="server-btn" data-server="s4">S4 (Superembed)</button>
-              <button class="server-btn" data-server="s5">S5 (VidSrc VIP)</button>
-            </div>
+            <span style="font-size: 0.85rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.4rem;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 1.1rem; height: 1.1rem; color: var(--accent);"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Now Playing
+            </span>
           </div>
 
           <!-- Right side: Theater mode, Fullscreen, Prev/Next episode buttons -->
@@ -1564,6 +1581,39 @@ async function renderEpisodesPage(type, id) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 0.9rem; height: 0.9rem;"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
               Fullscreen
             </button>
+          </div>
+        </div>
+
+        <!-- Dedicated Organized Server Selector Panel -->
+        <div class="watch-server-panel" style="margin-top: 2rem;">
+          <div class="watch-episodes-title" style="margin-bottom: 1.25rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:1.2rem; height:1.2rem; color: var(--accent);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+            Streaming Server Options
+          </div>
+          <div class="server-groups-container">
+            <div class="server-group">
+              <span class="server-group-label">Primary Sources:</span>
+              <div class="server-btns" style="margin: 0; display: inline-flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="server-btn active" data-server="s1">S1 (Videasy)</button>
+                <button class="server-btn" data-server="s2">S2 (VidSrc.to)</button>
+                <button class="server-btn" data-server="s3">S3 (VidSrc.xyz)</button>
+              </div>
+            </div>
+            <div class="server-group" style="margin-top: 0.8rem;">
+              <span class="server-group-label">Alt Sources:</span>
+              <div class="server-btns" style="margin: 0; display: inline-flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="server-btn" data-server="s4">S4 (Superembed)</button>
+                <button class="server-btn" data-server="s5">S5 (VidSrc VIP)</button>
+                <button class="server-btn" data-server="s6">S6 (VidSrc Embed)</button>
+              </div>
+            </div>
+            <div class="server-group" style="margin-top: 0.8rem;">
+              <span class="server-group-label">VidRock Player:</span>
+              <div class="server-btns" style="margin: 0; display: inline-flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="server-btn" data-server="s7">S7 (VidRock TMDB)</button>
+                <button class="server-btn" data-server="s8">S8 (VidRock IMDB)</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1645,7 +1695,7 @@ async function renderEpisodesPage(type, id) {
     }
 
     // Setup Server player iframe loader source trigger
-    function updatePlayerSource(serverName) {
+    async function updatePlayerSource(serverName) {
       const iframe = document.getElementById("streaming-player");
       const loader = document.getElementById("watch-player-loader");
       loader.style.display = "flex"; 
@@ -1663,6 +1713,28 @@ async function renderEpisodesPage(type, id) {
           url = `https://player.videasy.net/tv/${id}/${season}/${episode}?color=${colorHex}&overlay=${settings.playerOverlay}&nextEpisode=${settings.playerNextBtn}&autoplayNextEpisode=${settings.playerAutoplay}&episodeSelector=${settings.playerSelector}&progress=${startSec}`;
         } else if (type === "anime") {
           url = `https://player.videasy.net/anime/${id}/${episode}?color=${colorHex}&overlay=${settings.playerOverlay}&nextEpisode=${settings.playerNextBtn}&autoplayNextEpisode=${settings.playerAutoplay}&episodeSelector=${settings.playerSelector}&progress=${startSec}`;
+        }
+      } else if (serverName === "s6") {
+        if (type === "movie") {
+          url = `https://vidsrc-embed.ru/embed/movie/${id}?autoplay=1`;
+        } else {
+          url = `https://vidsrc-embed.ru/embed/tv/${id}/${season}-${episode}?autoplay=1`;
+        }
+      } else if (serverName === "s7") {
+        const cleanColor = colorHex;
+        if (type === "movie") {
+          url = `https://vidrock.net/movie/${id}?autoplay=true&autonext=true&theme=${cleanColor}`;
+        } else {
+          url = `https://vidrock.net/tv/${id}/${season}/${episode}?autoplay=true&autonext=true&theme=${cleanColor}`;
+        }
+      } else if (serverName === "s8") {
+        const cleanColor = colorHex;
+        const imdbId = await getMediaImdbId(type, id, details);
+        const activeId = imdbId || id;
+        if (type === "movie") {
+          url = `https://vidrock.net/movie/${activeId}?autoplay=true&autonext=true&theme=${cleanColor}`;
+        } else {
+          url = `https://vidrock.net/tv/${activeId}/${season}/${episode}?autoplay=true&autonext=true&theme=${cleanColor}`;
         }
       } else {
         const baseMap = {
@@ -1698,12 +1770,17 @@ async function renderEpisodesPage(type, id) {
     // Load player immediately
     updatePlayerSource(currentWatchServer);
 
-    // Download link
-    if (type === "movie") {
-      const dlBtn = document.getElementById("watch-download-btn");
-      dlBtn.href = `https://dl.vidsrc.vip/movie/${id}`;
+    // Download link (Header button - visible for all types using VidRock)
+    const dlBtn = document.getElementById("watch-download-btn");
+    if (dlBtn) {
+      if (type === "movie") {
+        dlBtn.href = `https://vidrock.net/movie/${id}`;
+      } else {
+        dlBtn.href = `https://vidrock.net/tv/${id}/${season}/${episode}`;
+      }
       dlBtn.style.display = "inline-flex";
     }
+
 
     // Bind server click buttons
     const serverButtons = document.querySelectorAll(".server-btn");
